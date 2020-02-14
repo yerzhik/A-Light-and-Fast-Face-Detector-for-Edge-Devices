@@ -4,7 +4,7 @@ import os
 import numpy
 import cv2
 import time
-
+import re
 
 # empty data batch class for dynamical properties
 class DataBatch:
@@ -229,8 +229,9 @@ def run_prediction_folder():
     from config_farm import configuration_10_560_25L_8scales_v1 as cfg
     import mxnet
 
-    debug_folder = '' # fill the folder that contains images
-    file_name_list = [file_name for file_name in os.listdir(debug_folder) if file_name.lower().endswith('jpg')]
+    debug_folder = '/media/yerzhan/93082b4b-171b-48cd-9493-0d82f4fbb40d/data/faces/f4/' # fill the folder that contains images
+    debug_folder = '/home/yerzhan/Downloads/img/' # fill the folder that contains images
+    file_name_list = [file_name for file_name in os.listdir(debug_folder) if file_name.lower().endswith('png')]
 
     symbol_file_path = '../symbol_farm/symbol_10_560_25L_8scales_v1_deploy.json'
     model_file_path = '../saved_model/configuration_10_560_25L_8scales_v1/train_10_560_25L_8scales_v1_iter_1400000.params'
@@ -245,10 +246,11 @@ def run_prediction_folder():
                            receptive_field_center_start=cfg.param_receptive_field_center_start,
                            num_output_scales=cfg.param_num_output_scales)
 
+    file_name_list.sort(key=lambda var:[int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
     for file_name in file_name_list:
         im = cv2.imread(os.path.join(debug_folder, file_name))
 
-        bboxes, _ = my_predictor.predict(im, resize_scale=1, score_threshold=0.3, top_k=10000, NMS_threshold=0.3, NMS_flag=True, skip_scale_branch_list=[])
+        bboxes, _ = my_predictor.predict(im, resize_scale=1, score_threshold=0.8, top_k=10000, NMS_threshold=0.3, NMS_flag=True, skip_scale_branch_list=[])
         for bbox in bboxes:
             cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
 
@@ -256,7 +258,7 @@ def run_prediction_folder():
             scale = 1600/max(im.shape[:2])
             im = cv2.resize(im, (0, 0), fx=scale, fy=scale)
         cv2.imshow('im', im)
-        cv2.waitKey()
+        cv2.waitKey(0)
         # cv2.imwrite(os.path.join(debug_folder, file_name.replace('.jpg','_result.jpg')), im)
 
 
